@@ -36,16 +36,17 @@ public class SavedMap {
         Set<String> keys = this.plugin.getMapConfig().getKeys(false);
         int tmp = 0;
         for (String key : keys) {
+            if(!key.equals("map" + id))
+                continue;
             ConfigurationSection section = plugin.getMapConfig().getConfigurationSection(key);
-            if (section.contains(id + "")) {
-                tmp++;
+            tmp++;
 
-                this.imgName = section.getString("image");
-                try {
-                    this.image = ImageIO.read(new File(Util.scaledImages, this.imgName + ".png"));
-                } catch (IOException e) {
-                    System.out.println("Image " + this.imgName + ".png doesn't exists in Image directory.");
-                }
+            this.imgName = section.getString("image");
+            try {
+                this.image = ImageIO.read(new File(Util.scaledImages, this.imgName + ".png"));
+            } catch (IOException e) {
+                System.out.println("Image " + this.imgName + ".png doesn't exists in Image directory.");
+
             }
         }
         if (tmp == 0) {

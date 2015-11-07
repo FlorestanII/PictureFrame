@@ -3,8 +3,6 @@ package me.florestanii.pictureframe;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
-import me.florestanii.pictureframe.util.Util;
-
 public class Poster {
     private BufferedImage src;
     private BufferedImage[] imgs;
@@ -32,9 +30,9 @@ public class Poster {
 
     private void scaleImg() {
 
-        int columnCount = src.getWidth() % 128 == 0 ? ((int) (src.getWidth() / 128)) : ((int) (src.getWidth() / 128)) + 1;
-        int rowCount = src.getHeight() % 128 == 0 ? ((int) (src.getHeight() / 128)) : ((int) (src.getHeight() / 128)) + 1;
-        src = Util.toBufferedImage(src.getScaledInstance(columnCount * 128, rowCount * 128, 4));
+//        int columnCount = src.getWidth() % 128 == 0 ? ((int) (src.getWidth() / 128)) : ((int) (src.getWidth() / 128)) + 1;
+//        int rowCount = src.getHeight() % 128 == 0 ? ((int) (src.getHeight() / 128)) : ((int) (src.getHeight() / 128)) + 1;
+//        src = Util.toBufferedImage(src.getScaledInstance(columnCount * 128, rowCount * 128, 4));
 
         int x = 0;
         int y = 0;

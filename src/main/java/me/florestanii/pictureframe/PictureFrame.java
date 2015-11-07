@@ -29,7 +29,6 @@ public class PictureFrame extends JavaPlugin {
 
         getCommand("pictureframe").setExecutor(new PictureFrameCommand(this));
 
-        getServer().getPluginManager().registerEvents(new FrameCreateHandler(this), this);
         getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
         
         if (Util.createScaledImagesDir(this)) {

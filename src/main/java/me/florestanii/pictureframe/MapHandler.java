@@ -18,6 +18,7 @@ public class MapHandler extends BukkitRunnable {
     private final PictureFrame plugin;
 
     private boolean ready = false;
+    private Runnable callback;
 
     public MapHandler(Player player, String path, int width, int height, PictureFrame plugin) {
         this.i = 0;
@@ -61,6 +62,10 @@ public class MapHandler extends BukkitRunnable {
             }
 
             ready = true;
+
+            if (callback != null) {
+                callback.run();
+            }
         }
     }
 
@@ -74,5 +79,9 @@ public class MapHandler extends BukkitRunnable {
 
     public Poster getPoster() {
         return imageRendererThread.getPoster();
+    }
+
+    public void setCallback(Runnable callback) {
+        this.callback = callback;
     }
 }

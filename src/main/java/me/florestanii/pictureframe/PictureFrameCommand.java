@@ -17,6 +17,9 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.List;
+import java.util.logging.Level;
+
 public class PictureFrameCommand implements CommandExecutor {
 
     private final PictureFrame plugin;
@@ -97,46 +100,37 @@ public class PictureFrameCommand implements CommandExecutor {
 
     private void startPlacePoster(final Player p, String path, int width, int height) {
         final MapHandler mapHandler = new MapHandler(p, path, width, height, this.plugin);
-        mapHandler.setCallback(new Runnable() {
+        mapHandler.setCallback(new MapHandler.Callback() {
             @Override
-            public void run() {
+            public void posterReady(final Poster poster, final List<ItemStack> maps) {
                 p.sendMessage(ChatColor.YELLOW + "Rightclick on a wall to place the poster.");
 
                 plugin.getServer().getPluginManager().registerEvents(new Listener() {
                     @EventHandler
-                    public void onBlockInteract(PlayerInteractEvent e) {
-                        if (e.isCancelled() || !e.hasBlock() || e.getAction() != Action.RIGHT_CLICK_BLOCK) {
+                    public void onBlockInteract(PlayerInteractEvent event) {
+                        if (event.isCancelled() || !event.hasBlock() || event.getAction() != Action.RIGHT_CLICK_BLOCK) {
                             return;
                         }
 
-                        Player p = e.getPlayer();
-                        final Block topLeftBlock = e.getClickedBlock();
-                        final BlockFace facing = e.getBlockFace();
+                        final Block topLeftBlock = event.getClickedBlock();
+                        final BlockFace facing = event.getBlockFace();
 
-                        if (!mapHandler.isReady()) {
-                            p.sendMessage("Please wait a moment, the picture isn't ready.");
-                            e.setCancelled(true);
-                            return;
-                        }
-
-                        if (mapHandler.getRenderedMapsAsItemStacks().size() == 1) {
-                            Util.attachItemFrame(topLeftBlock, mapHandler.getRenderedMapsAsItemStacks().get(0), facing);
-                            e.setCancelled(true);
-                            return;
-                        }
-                        Poster poster = mapHandler.getPoster();
-                        for (int x = 0; x < poster.getWidth(); x++) {
-                            for (int y = 0; y < poster.getHeight(); y++) {
-                                System.out.println("x=" + x + ", y=" + y);
-                                Block block = Util.getRelative(topLeftBlock, facing, -y, -x, 0);
-                                ItemStack map = mapHandler.getRenderedMapsAsItemStacks().get(y * poster.getWidth() + x);
-                                ItemMeta meta = map.getItemMeta();
-                                meta.setDisplayName("");
-                                map.setItemMeta(meta);
-                                Util.attachItemFrame(block, map, facing);
+                        try {
+                            for (int x = 0; x < poster.getWidth(); x++) {
+                                for (int y = 0; y < poster.getHeight(); y++) {
+                                    Block block = Util.getRelative(topLeftBlock, facing, -y, -x, 0);
+                                    ItemStack map = maps.get(y * poster.getWidth() + x);
+                                    ItemMeta meta = map.getItemMeta();
+                                    meta.setDisplayName("");
+                                    map.setItemMeta(meta);
+                                    Util.attachItemFrame(block, map, facing);
+                                }
                             }
+                        } catch (Exception e) {
+                            p.sendMessage(ChatColor.RED + "Attaching the poster failed.");
+                            plugin.getLogger().log(Level.SEVERE, "Attaching the poster failed", e);
                         }
-                        e.setCancelled(true);
+                        event.setCancelled(true);
                         HandlerList.unregisterAll(this);
                     }
 
@@ -146,7 +140,13 @@ public class PictureFrameCommand implements CommandExecutor {
                     }
                 }, plugin);
             }
+
+            @Override
+            public void posterFailed(Throwable exception) {
+                p.sendMessage(ChatColor.RED + "Creating the poster failed.");
+                plugin.getLogger().log(Level.SEVERE, "Creating the poster failed", exception);
+            }
         });
-        mapHandler.runTaskTimer(this.plugin, 0L, 10L);
+        mapHandler.run();
     }
 }

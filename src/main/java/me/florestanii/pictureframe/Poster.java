@@ -21,7 +21,7 @@ public class Poster {
         this.height = height;
     }
 
-    public BufferedImage[] geImages() {
+    public BufferedImage[] getImages() {
         return this.imgs;
     }
 

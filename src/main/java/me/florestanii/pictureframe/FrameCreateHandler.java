@@ -1,20 +1,15 @@
 package me.florestanii.pictureframe;
 
-import java.awt.image.BufferedImage;
-
 import me.florestanii.pictureframe.util.Cache;
-
+import me.florestanii.pictureframe.util.Util;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Rotation;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemFrame;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -23,16 +18,17 @@ public class FrameCreateHandler implements Listener {
     public FrameCreateHandler(PictureFrame plugin) {
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onEntityInteract(PlayerInteractEntityEvent e) {
-        if (e.isCancelled() || e.getRightClicked().getType() != EntityType.ITEM_FRAME)
+    @EventHandler
+    public void onBlockInteract(PlayerInteractEvent e) {
+        if (e.isCancelled() || !e.hasBlock() || e.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
+        }
 
         Player p = e.getPlayer();
-        ItemFrame item = (ItemFrame) e.getRightClicked();
+        final Block topLeftBlock = e.getClickedBlock();
+        final BlockFace facing = e.getBlockFace();
 
         if (Cache.hasCacheCreating(p)) {
-
             if (!p.hasPermission("pictureframe.create")) {
                 p.sendMessage(ChatColor.DARK_RED + "You don't have enough permissions to use that command!");
                 return;
@@ -49,12 +45,10 @@ public class FrameCreateHandler implements Listener {
             meta.setDisplayName("");
             map.setItemMeta(meta);
 
-            item.setItem(map);
-            item.setRotation(Rotation.NONE);
+            Util.attachItemFrame(topLeftBlock, map, facing);
             Cache.removeCacheCreating(p);
             e.setCancelled(true);
         } else if (Cache.hasCacheMultiCreating(p)) {
-
             if (!p.hasPermission("pictureframe.multicreate")) {
                 p.sendMessage(ChatColor.DARK_RED + "You don't have enough permissions to use that command!");
                 return;
@@ -69,114 +63,25 @@ public class FrameCreateHandler implements Listener {
             }
 
             if (mapHandler.getRenderedMapsAsItemStacks().size() == 1) {
-                item.setItem(mapHandler.getRenderedMapsAsItemStacks().get(0));
+                Util.attachItemFrame(topLeftBlock, mapHandler.getRenderedMapsAsItemStacks().get(0), facing);
                 Cache.removeCacheMultiCreating(p);
                 e.setCancelled(true);
                 return;
             }
-            BufferedImage srcImg = mapHandler.getRendererThread().getSrcImg();
-            int columnCount = srcImg.getWidth() % 128 == 0 ? ((int) (srcImg.getWidth() / 128)) : ((int) (srcImg.getWidth() / 128)) + 1;
-            int rowCount = srcImg.getHeight() % 128 == 0 ? ((int) (srcImg.getHeight() / 128)) : ((int) (srcImg.getHeight() / 128)) + 1;
-
-            int i = 0;
-            for (int column = 1; column <= columnCount; column++) {
-                for (int row = 1; row <= rowCount; row++) {
-                    ItemStack itemStack = mapHandler.getRenderedMapsAsItemStacks().get(i);
-                    ItemMeta meta = itemStack.getItemMeta();
-                    
+            Poster poster = mapHandler.getPoster();
+            for (int x = 0; x < poster.getWidth(); x++) {
+                for (int y = 0; y < poster.getHeight(); y++) {
+                    System.out.println("x=" + x + ", y=" + y);
+                    Block block = Util.getRelative(topLeftBlock, facing, -y, -x, 0);
+                    ItemStack map = mapHandler.getRenderedMapsAsItemStacks().get(y * poster.getWidth() + x);
+                    ItemMeta meta = map.getItemMeta();
                     meta.setDisplayName("");
-                    itemStack.setItemMeta(meta);
-
-                    if (column == 1 && row == 1)
-                        item.setItem(itemStack);
-                    item.setRotation(Rotation.NONE);
-
-                    Location loc;
-
-                    switch (item.getFacing()) {
-                    case EAST:
-
-                        loc = new Location(item.getWorld(), item.getLocation().getX(), item.getLocation().getY() - (row - 1), item.getLocation().getZ() - (column - 1));
-
-                        for (Entity entity : item.getNearbyEntities(0, row, column)) {
-                            if (!(entity instanceof ItemFrame))
-                                continue;
-                            ItemFrame nextItemFrame = (ItemFrame) entity;
-
-                            if (nextItemFrame.getLocation().distanceSquared(loc) <= 0.0001) {
-                                nextItemFrame.setItem(itemStack);
-                                nextItemFrame.setRotation(Rotation.NONE);
-                            }
-
-                        }
-
-                        break;
-
-                    case WEST:
-
-                        loc = new Location(item.getWorld(), item.getLocation().getX(), item.getLocation().getY() - (row - 1), item.getLocation().getZ() + (column - 1));
-
-                        for (Entity entity : item.getNearbyEntities(0, row, column)) {
-                            if (!(entity instanceof ItemFrame))
-                                continue;
-                            ItemFrame nextItemFrame = (ItemFrame) entity;
-
-                            if (nextItemFrame.getLocation().distanceSquared(loc) <= 0.0001) {
-                                nextItemFrame.setItem(itemStack);
-                                nextItemFrame.setRotation(Rotation.NONE);
-                            }
-
-                        }
-
-                        break;
-
-                    case NORTH:
-
-                        loc = new Location(item.getWorld(), item.getLocation().getX() - (column - 1), item.getLocation().getY() - (row - 1), item.getLocation().getZ());
-
-                        for (Entity entity : item.getNearbyEntities(column, row, 0)) {
-                            if (!(entity instanceof ItemFrame))
-                                continue;
-                            ItemFrame nextItemFrame = (ItemFrame) entity;
-
-                            if (nextItemFrame.getLocation().distanceSquared(loc) <= 0.0001) {
-                                nextItemFrame.setItem(itemStack);
-                                nextItemFrame.setRotation(Rotation.NONE);
-                            }
-
-                        }
-
-                        break;
-
-                    case SOUTH:
-
-                        loc = new Location(item.getWorld(), item.getLocation().getX() + (column - 1), item.getLocation().getY() - (row - 1), item.getLocation().getZ());
-
-                        for (Entity entity : item.getNearbyEntities(column, row, 0)) {
-                            if (!(entity instanceof ItemFrame))
-                                continue;
-                            ItemFrame nextItemFrame = (ItemFrame) entity;
-
-                            if (nextItemFrame.getLocation().distanceSquared(loc) <= 0.0001) {
-                                nextItemFrame.setItem(itemStack);
-                                nextItemFrame.setRotation(Rotation.NONE);
-                            }
-
-                        }
-
-                        break;
-
-                    default:
-                        break;
-                    }
-
-                    i++;
+                    map.setItemMeta(meta);
+                    Util.attachItemFrame(block, map, facing);
                 }
             }
             e.setCancelled(true);
             Cache.removeCacheMultiCreating(p);
-
         }
     }
-
 }

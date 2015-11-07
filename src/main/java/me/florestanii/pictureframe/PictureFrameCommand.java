@@ -2,7 +2,6 @@ package me.florestanii.pictureframe;
 
 import me.florestanii.pictureframe.util.Cache;
 import me.florestanii.pictureframe.util.CacheFrameCreating;
-
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -32,16 +31,16 @@ public class PictureFrameCommand implements CommandExecutor {
             return true;
         }
 
-        if(args[0].equalsIgnoreCase("create")){
+        if (args[0].equalsIgnoreCase("create")) {
             handleFrameCreate(p, args);
             return true;
         }
-        
-        if(args[0].equalsIgnoreCase("multicreate")){
+
+        if (args[0].equalsIgnoreCase("multicreate")) {
             handleMultiFrameCreate(p, args);
             return true;
         }
-        
+
         sendHelp(p);
         return true;
     }
@@ -64,33 +63,34 @@ public class PictureFrameCommand implements CommandExecutor {
             pathBuilder.append(args[i]);
         }
 
-        MapHandler mapHandler = new MapHandler(p, pathBuilder.toString(), this.plugin, true);
+        MapHandler mapHandler = new MapHandler(p, pathBuilder.toString(), 1, 1, this.plugin);
         mapHandler.runTaskTimer(this.plugin, 0L, 10L);
-        
+
         Cache.setCacheCreating(p, new CacheFrameCreating(p, mapHandler));
-        p.sendMessage(ChatColor.YELLOW + "Rightclick now the frame.");
-        
+        p.sendMessage(ChatColor.YELLOW + "Rightclick on a wall to place the poster.");
     }
 
-    private void handleMultiFrameCreate(Player p, String[] args){
-        if(!p.hasPermission("pictureframe.mutlicreate")){
+    private void handleMultiFrameCreate(Player p, String[] args) {
+        if (!p.hasPermission("pictureframe.mutlicreate")) {
             p.sendMessage(ChatColor.DARK_RED + "You don't have enough permissions to use that command!");
+            return;
         }
-        
+
+        int width = Integer.parseInt(args[1]);
+        int height = Integer.parseInt(args[2]);
+
         StringBuilder pathBuilder = new StringBuilder();
-        for (int i = 1; i < args.length; i++) {
-            if (i != 1) {
+        for (int i = 3; i < args.length; i++) {
+            if (i != 3) {
                 pathBuilder.append(" ");
             }
             pathBuilder.append(args[i]);
         }
-        
-        MapHandler mapHandler = new MapHandler(p, pathBuilder.toString(), this.plugin, false);
+
+        MapHandler mapHandler = new MapHandler(p, pathBuilder.toString(), width, height, this.plugin);
         mapHandler.runTaskTimer(this.plugin, 0L, 10L);
-        
+
         Cache.setCacheMultiCreating(p, new CacheFrameCreating(p, mapHandler));
-        p.sendMessage(ChatColor.YELLOW + "Rightclick now on the top left frame.");
-        
+        p.sendMessage(ChatColor.YELLOW + "Rightclick on a wall to place the poster.");
     }
-    
 }

@@ -1,12 +1,13 @@
 package me.florestanii.pictureframe;
 
-import java.util.ArrayList;
-
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapView;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 public class MapHandler extends BukkitRunnable {
     private final ArrayList<ItemStack> renderedMaps = new ArrayList<ItemStack>();
@@ -16,20 +17,14 @@ public class MapHandler extends BukkitRunnable {
     private ImageRendererThread imageRendererThread;
     private final PictureFrame plugin;
 
-    private final String path;
     private boolean ready = false;
 
-    public MapHandler(Player player, String path, PictureFrame plugin, boolean resized) {
+    public MapHandler(Player player, String path, int width, int height, PictureFrame plugin) {
         this.i = 0;
         this.player = player;
-        this.imageRendererThread = new ImageRendererThread(path, resized);
+        this.imageRendererThread = new ImageRendererThread(path, width, height);
         this.imageRendererThread.start();
         this.plugin = plugin;
-        this.path = path;
-    }
-
-    public String getPath() {
-        return path;
     }
 
     public ImageRendererThread getRendererThread() {
@@ -46,21 +41,21 @@ public class MapHandler extends BukkitRunnable {
             }
         } else {
             cancel();
-            int nbImage = imageRendererThread.getImg().length;
-            
+            BufferedImage[] images = imageRendererThread.getPoster().geImages();
+
             ItemStack map;
-            for (int i = 0; i < nbImage; i++) {
+            for (int i = 0; i < images.length; i++) {
                 MapView mapView;
-                
+
                 mapView = plugin.getServer().createMap(player.getWorld());
-                
+
                 ImageRendererThread.removeRenderer(mapView);
-                mapView.addRenderer(new ImageMapRenderer(imageRendererThread.getImg()[i]));
+                mapView.addRenderer(new ImageMapRenderer(images[i]));
                 map = new ItemStack(Material.MAP, 1, mapView.getId());
-                
+
                 renderedMaps.add(map);
 
-                SavedMap svg = new SavedMap(plugin, mapView.getId(), imageRendererThread.getImg()[i], player.getWorld());
+                SavedMap svg = new SavedMap(plugin, mapView.getId(), images[i], player.getWorld());
                 svg.saveMap();
                 player.sendMap(mapView);
             }
@@ -77,4 +72,7 @@ public class MapHandler extends BukkitRunnable {
         return ready;
     }
 
+    public Poster getPoster() {
+        return imageRendererThread.getPoster();
+    }
 }

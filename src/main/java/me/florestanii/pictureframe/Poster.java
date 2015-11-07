@@ -1,93 +1,86 @@
 package me.florestanii.pictureframe;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 
 public class Poster {
-    private BufferedImage src;
     private BufferedImage[] imgs;
-    private HashMap<Integer, String> numberMap;
-    private int partCount;
-    private int column;
+    private int width;
+    private int height;
 
-    public Poster(BufferedImage img) {
-        this.src = img;
-        this.numberMap = new HashMap<Integer, String>();
-        scaleImg();
+    /**
+     * Creates a new poster.
+     *
+     * @param img    image on the poster
+     * @param width  width in blocks
+     * @param height height in blocks
+     */
+    public Poster(BufferedImage img, int width, int height) {
+        this.imgs = splitImage(img, width, height);
+        this.width = width;
+        this.height = height;
     }
 
-    public BufferedImage[] getPoster() {
+    public BufferedImage[] geImages() {
         return this.imgs;
     }
 
-    public HashMap<Integer, String> getNumberMap() {
-        return numberMap;
+    public BufferedImage getImage(int x, int y) {
+        return imgs[y * width + x];
     }
 
-    public int getNbColonne() {
-        return this.column;
+    /**
+     * Gets the width of this poster, in blocks.
+     *
+     * @return width of this poster, in blocks
+     */
+    public int getWidth() {
+        return width;
     }
 
-    private void scaleImg() {
+    /**
+     * Gets the height of this poster, in blocks.
+     *
+     * @return height of this poster, in blocks
+     */
+    public int getHeight() {
+        return height;
+    }
 
-//        int columnCount = src.getWidth() % 128 == 0 ? ((int) (src.getWidth() / 128)) : ((int) (src.getWidth() / 128)) + 1;
-//        int rowCount = src.getHeight() % 128 == 0 ? ((int) (src.getHeight() / 128)) : ((int) (src.getHeight() / 128)) + 1;
-//        src = Util.toBufferedImage(src.getScaledInstance(columnCount * 128, rowCount * 128, 4));
+    private static BufferedImage[] splitImage(BufferedImage img, int width, int height) {
+        //one map is 128 x 128, so we need to scale the image to (width * 128) x (height * 128)
+        img = scaleImage(img, width * 128, height * 128);
 
-        int x = 0;
-        int y = 0;
-        int index = 0;
-        int restX = src.getWidth() % 128;
-        int restY = src.getHeight() % 128;
-        int line;
-        if (src.getWidth() / 128 <= 0) {
-            line = 1;
+        BufferedImage[] images = new BufferedImage[width * height];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                images[y * width + x] = img.getSubimage(x * 128, y * 128, 128, 128);
+            }
+        }
+
+        return images;
+    }
+
+    private static BufferedImage scaleImage(final BufferedImage img, final int width, final int height) {
+        BufferedImage[] images = new BufferedImage[width * height];
+        double ratio = img.getWidth() / (double) img.getHeight();
+
+        int actualWidth = (int) (ratio * height);
+        int actualHeight;
+        if (actualWidth < width) {
+            actualHeight = (int) (width / ratio);
+            actualWidth = width;
         } else {
-            if (src.getWidth() % 128 != 0) {
-                line = src.getWidth() / 128 + 1;
-            } else {
-                line = src.getWidth() / 128;
-            }
+            actualHeight = height;
         }
-        int column;
-        if (src.getHeight() <= 0) {
-            column = 1;
-        } else {
-            if (src.getHeight() % 128 != 0) {
-                column = src.getHeight() / 128 + 1;
-            } else {
-                column = src.getHeight() / 128;
-            }
-        }
-        this.column = column;
-        partCount = (line * column);
-        imgs = new BufferedImage[partCount];
-        for (int lig = 0; lig < line; lig++) {
-            y = 0;
-            if ((lig == line - 1) && (restX != 0)) {
-                for (int col = 0; col < column; col++) {
-                    if ((col == column - 1) && (restY != 0)) {
-                        imgs[index] = src.getSubimage(x, y, restX, restY);
-                    } else {
-                        imgs[index] = src.getSubimage(x, y, restX, 128);
-                        y += 128;
-                    }
-                    numberMap.put(index, "column " + (lig + 1) + ", row " + (col + 1));
-                    index++;
-                }
-            } else {
-                for (int col = 0; col < column; col++) {
-                    if ((col == column - 1) && (restY != 0)) {
-                        imgs[index] = this.src.getSubimage(x, y, 128, restY);
-                    } else {
-                        imgs[index] = this.src.getSubimage(x, y, 128, 128);
-                        y += 128;
-                    }
-                    numberMap.put(index, "column " + (lig + 1) + ", row " + (col + 1));
-                    index++;
-                }
-                x += 128;
-            }
-        }
+
+        int destX = (width - actualWidth) / 2;
+        int destY = (height - actualHeight) / 2;
+        BufferedImage newImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics g = newImage.getGraphics();
+        g.drawImage(img, destX, destY, destX + actualWidth, destY + actualHeight, 0, 0, img.getWidth(), img.getHeight(), null);
+        g.dispose();
+
+        return newImage;
     }
 }

@@ -1,19 +1,17 @@
 package me.florestanii.pictureframe;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.Set;
-
-import javax.imageio.ImageIO;
-
 import me.florestanii.pictureframe.util.Util;
-
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
 
 public class SavedMap {
     PictureFrame plugin;
@@ -36,17 +34,16 @@ public class SavedMap {
         Set<String> keys = this.plugin.getMapConfig().getKeys(false);
         int tmp = 0;
         for (String key : keys) {
-            if(!key.equals("map" + id))
+            if (!key.equals("map" + id))
                 continue;
             ConfigurationSection section = plugin.getMapConfig().getConfigurationSection(key);
             tmp++;
 
             this.imgName = section.getString("image");
             try {
-                this.image = ImageIO.read(new File(Util.scaledImages, this.imgName + ".png"));
+                this.image = ImageIO.read(new File(plugin.getScaledImagesDirectory(), this.imgName + ".png"));
             } catch (IOException e) {
                 System.out.println("Image " + this.imgName + ".png doesn't exists in Image directory.");
-
             }
         }
         if (tmp == 0) {
@@ -57,9 +54,7 @@ public class SavedMap {
     public boolean saveMap() {
         this.plugin.getLogger().info("Saving map " + id);
         try {
-            File outputfile = new File(Util.scaledImages, imgName + ".png");
-            if (!outputfile.exists())
-                outputfile.mkdirs();
+            File outputfile = new File(plugin.getScaledImagesDirectory(), imgName + ".png");
             ImageIO.write(MapPalette.resizeImage(image), "png", outputfile);
         } catch (IOException e) {
             e.printStackTrace();
@@ -75,10 +70,9 @@ public class SavedMap {
 
     @SuppressWarnings("deprecation")
     public boolean loadMap() {
-
         MapView mapView = Bukkit.getMap(id);
         if (mapView != null) {
-            ImageRendererThread.removeRenderer(mapView);
+            Util.removeRenderers(mapView);
             mapView.addRenderer(new ImageMapRenderer(image));
             return true;
         }

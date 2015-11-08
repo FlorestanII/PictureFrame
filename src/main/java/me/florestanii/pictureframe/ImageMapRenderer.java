@@ -1,15 +1,15 @@
 package me.florestanii.pictureframe;
 
-import java.awt.Image;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 
+import java.awt.*;
+
 public class ImageMapRenderer extends MapRenderer implements Runnable {
-    boolean ready;
-    Image img;
-    private Thread renderThread;
+    private boolean ready;
+    private Image img;
     public MapCanvas canvas;
 
     public ImageMapRenderer(Image img) {
@@ -21,8 +21,9 @@ public class ImageMapRenderer extends MapRenderer implements Runnable {
     public void render(MapView v, MapCanvas canavas, Player p) {
         this.canvas = canavas;
         if (!this.ready) {
-            this.renderThread = new Thread(this);
-            this.renderThread.start();
+            Thread renderThread = new Thread(this);
+            renderThread.setDaemon(true);
+            renderThread.start();
         }
     }
 

@@ -1,42 +1,42 @@
 package me.florestanii.pictureframe;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Set;
-
 import me.florestanii.pictureframe.listener.ChunkListener;
-import me.florestanii.pictureframe.util.Util;
-
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
+
 public class PictureFrame extends JavaPlugin {
-
-    private FileConfiguration mapConfig = null;
-    private File mapConfigFile = null;
-
-    private static PictureFrame instance;
-
-    @Override
-    public void onLoad() {
-        instance = this;
-    }
+    private FileConfiguration mapConfig;
+    private File mapConfigFile;
+    private File scaledImagesDirectory;
+    private File imagesDirectory;
 
     @Override
     public void onEnable() {
+        scaledImagesDirectory = new File(getDataFolder(), "scaledimages");
+        if (!scaledImagesDirectory.exists() && !scaledImagesDirectory.mkdirs()) {
+            getLogger().severe("No scaled images directory found (and it couldn't be created automatically).");
+            setEnabled(false);
+            return;
+        }
+
+        imagesDirectory = new File(getDataFolder(), "images");
+        if (!imagesDirectory.exists() && !imagesDirectory.mkdirs()) {
+            getLogger().severe("No images directory found (and it couldn't be created automatically).");
+            setEnabled(false);
+            return;
+        }
 
         getCommand("pictureframe").setExecutor(new PictureFrameCommand(this));
-
         getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
-        
-        if (Util.createScaledImagesDir(this)) {
-            saveDefaultConfig();
-            loadMap();
-        } else {
-            setEnabled(false);
-        }
+
+        saveDefaultConfig();
+        loadMap();
     }
 
     @Override
@@ -49,14 +49,14 @@ public class PictureFrame extends JavaPlugin {
         int loadedMaps = 0;
         int failedMaps = 0;
         for (String key : keys) {
-            ConfigurationSection section = getMapConfig().getConfigurationSection(key);    
+            ConfigurationSection section = getMapConfig().getConfigurationSection(key);
             SavedMap map = new SavedMap(this, Short.valueOf(section.getString("id")));
-                if (map.loadMap()) {
-                    loadedMaps++;
-                } else {
-                    failedMaps++;
-                }
-            
+            if (map.loadMap()) {
+                loadedMaps++;
+            } else {
+                failedMaps++;
+            }
+
         }
         getLogger().info(loadedMaps + " maps was loaded");
         if (failedMaps != 0) {
@@ -89,8 +89,11 @@ public class PictureFrame extends JavaPlugin {
         }
     }
 
-    public static PictureFrame getPlugin() {
-        return instance;
+    public File getScaledImagesDirectory() {
+        return scaledImagesDirectory;
     }
 
+    public File getImagesDirectory() {
+        return imagesDirectory;
+    }
 }

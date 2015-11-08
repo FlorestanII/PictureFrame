@@ -1,27 +1,35 @@
 package me.florestanii.pictureframe;
 
+import me.florestanii.pictureframe.util.Util;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapView;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MapHandler implements Runnable {
     private final List<ItemStack> renderedMaps;
     private final Player player;
-    private final ImageRendererThread imageRendererThread;
     private final PictureFrame plugin;
+    private final String path;
+    private final int width;
+    private final int height;
     private Callback callback;
 
     public MapHandler(Player player, String path, int width, int height, PictureFrame plugin) {
         this.renderedMaps = new ArrayList<>(width * height);
         this.player = player;
-        this.imageRendererThread = new ImageRendererThread(path, width, height);
         this.plugin = plugin;
+        this.path = path;
+        this.width = width;
+        this.height = height;
     }
 
     /**
@@ -33,7 +41,7 @@ public class MapHandler implements Runnable {
             public void run() {
                 final Poster poster;
                 try {
-                    poster = imageRendererThread.createPoster();
+                    poster = createPoster();
                 } catch (IOException e) {
                     if (callback != null) {
                         callback.posterFailed(new Exception("Creating the poster failed", e));
@@ -53,7 +61,7 @@ public class MapHandler implements Runnable {
 
                             mapView = plugin.getServer().createMap(player.getWorld());
 
-                            ImageRendererThread.removeRenderer(mapView);
+                            Util.removeAllRenderers(mapView);
                             mapView.addRenderer(new ImageMapRenderer(image));
                             map = new ItemStack(Material.MAP, 1, mapView.getId());
 
@@ -71,6 +79,16 @@ public class MapHandler implements Runnable {
                 });
             }
         });
+    }
+
+    public Poster createPoster() throws IOException {
+        BufferedImage imgSrc;
+        try {
+            imgSrc = ImageIO.read(URI.create(this.path).toURL().openStream());
+        } catch (Exception e) {
+            imgSrc = ImageIO.read(new File(plugin.getImagesDirectory(), path));
+        }
+        return new Poster(imgSrc, width, height);
     }
 
     public void setCallback(Callback callback) {

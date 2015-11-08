@@ -30,7 +30,6 @@ public class PictureFrameCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String name, String[] args) {
-
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.DARK_RED + "This command is only for players!");
             return true;

@@ -1,0 +1,17 @@
+name: PictureFrame
+author: FlorestanII
+main: me.florestanii.pictureframe.PictureFrame
+version: VERSION
+
+commands:
+  pictureframe:
+     descripton: PictureFrame command
+     usage: / <commands> <args>
+     aliases: [pf]
+  tomap:
+    description: render an image in a map
+    usage: /<command> [URL]
+  maptool:
+    description: manage maps
+    usage: /<command>
+      

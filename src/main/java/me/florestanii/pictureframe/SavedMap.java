@@ -58,7 +58,6 @@ public class SavedMap {
         }
         ConfigurationSection section = plugin.getMapConfig().createSection(imgName);
         section.set("id", id);
-        section.set("world", world.getName());
         section.set("image", imgName);
         plugin.saveMapConfig();
         return true;
@@ -74,4 +73,12 @@ public class SavedMap {
         }
         return false;
     }
+    public short getId(){
+    	return id;
+    }
+    
+    public void updateImage(BufferedImage image){
+    	this.image = image;
+    }
+    
 }

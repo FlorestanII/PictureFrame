@@ -1,24 +1,36 @@
 package me.florestanii.pictureframe;
 
 import me.florestanii.pictureframe.util.Util;
+
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.List;
 import java.util.logging.Level;
+
+import javax.imageio.ImageIO;
 
 public class PictureFrameCommand implements CommandExecutor {
 
@@ -51,7 +63,12 @@ public class PictureFrameCommand implements CommandExecutor {
             handleMultiFrameCreate(p, args);
             return true;
         }
-
+        
+        if(args[0].equalsIgnoreCase("registerUpdate")) {
+        	registerUpdate(p, args);
+        	return true;
+        }
+        
         sendHelp(p);
         return true;
     }
@@ -148,4 +165,83 @@ public class PictureFrameCommand implements CommandExecutor {
         });
         mapHandler.run();
     }
+    
+    private void registerUpdate(final Player p, final String[] args) {
+    	if(!p.hasPermission("pictureframe.registerUpdate")){
+    		p.sendMessage(ChatColor.DARK_RED + "You don't have enough permissions to use that command!");
+    		return;
+    	}
+    	p.sendMessage(ChatColor.YELLOW + "Rightclick now on the pictureframe.");
+    	
+    	plugin.getServer().getPluginManager().registerEvents(new Listener() {
+    		
+    		@EventHandler
+    		public void onEntityInteract(PlayerInteractEntityEvent event) {
+    			
+    			if(event.getRightClicked().getType() != EntityType.ITEM_FRAME){
+    				return;
+    			}
+    			
+    			ItemFrame itemFrame = (ItemFrame) event.getRightClicked();
+    			
+    			if(itemFrame.getItem() == null || itemFrame.getItem().getType() != Material.MAP || !plugin.isMapLoaded(itemFrame.getItem().getDurability())){
+    				p.sendMessage(ChatColor.DARK_RED + "This item frame isn't a picture frame!");
+    				return;
+    			}
+    			
+    			final short mapId = itemFrame.getItem().getDurability();
+    			
+    			final int updateInterval = Integer.parseInt(args[1]);
+    			
+    			StringBuilder pathBuilder = new StringBuilder();
+    	        for (int i = 2; i < args.length; i++) {
+    	            if (i != 2) {
+    	                pathBuilder.append(" ");
+    	            }
+    	            pathBuilder.append(args[i]);
+    	        }
+    			
+    			final String updateURL = pathBuilder.toString(); 
+    			
+    			plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+					
+					@Override
+					public void run() {
+						
+						try {
+							BufferedImage updatedImage = ImageIO.read(URI.create(updateURL).toURL().openStream());
+							plugin.getMap(mapId).updateImage(updatedImage);
+							plugin.getMap(mapId).loadMap();
+							plugin.getMap(mapId).saveMap();
+						} catch (MalformedURLException e) {
+							e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						
+					}
+					
+				}, updateInterval*20, updateInterval*20);
+    	
+    			ConfigurationSection section = plugin.getUpdateConfig().createSection("map" + mapId);
+    			section.set("updateInterval", updateInterval);
+    			section.set("updateURL", updateURL);
+    			section.set("map", mapId);
+    			plugin.saveUpdateConfig();
+    			
+    			event.setCancelled(true);
+    			HandlerList.unregisterAll(this);
+    		}
+    		
+    		@EventHandler
+    		public void onPlayerQuit(PlayerQuitEvent event){
+    			if(event.getPlayer().getName().equals(p.getName())){
+    				HandlerList.unregisterAll(this);
+    			}
+    		}
+    		
+    	}, plugin);
+    	
+    }
+    
 }

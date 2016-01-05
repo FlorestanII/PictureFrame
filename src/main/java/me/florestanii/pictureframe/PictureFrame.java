@@ -1,14 +1,21 @@
 package me.florestanii.pictureframe;
 
 import me.florestanii.pictureframe.listener.ChunkListener;
+
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Set;
+
+import javax.imageio.ImageIO;
 
 public class PictureFrame extends JavaPlugin {
     private FileConfiguration mapConfig;
@@ -16,6 +23,11 @@ public class PictureFrame extends JavaPlugin {
     private File scaledImagesDirectory;
     private File imagesDirectory;
 
+    private File updateConfigFile;
+    private FileConfiguration updateConfig;
+    
+    private ArrayList<SavedMap> loadedMaps = new ArrayList<SavedMap>();
+    
     @Override
     public void onEnable() {
         scaledImagesDirectory = new File(getDataFolder(), "scaledimages");
@@ -37,6 +49,7 @@ public class PictureFrame extends JavaPlugin {
 
         saveDefaultConfig();
         loadMap();
+        loadUpdates();
     }
 
     @Override
@@ -44,6 +57,36 @@ public class PictureFrame extends JavaPlugin {
         super.onDisable();
     }
 
+    public void loadUpdates(){
+    	Set<String> keys = getUpdateConfig().getKeys(false);
+    	
+    	for(String key : keys) {
+    		final ConfigurationSection section = getUpdateConfig().getConfigurationSection(key);
+    		
+    		getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+				
+				@Override
+				public void run() {
+
+					try {
+						BufferedImage updatedImage = ImageIO.read(URI.create(section.getString("updateURL")).toURL().openStream());
+						getMap((short)section.getInt("map")).updateImage(updatedImage);
+						getMap((short)section.getInt("map")).loadMap();
+						getMap((short)section.getInt("map")).saveMap();
+					} catch (MalformedURLException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+						
+				}
+				
+			}, section.getInt("updateInterval")*20, section.getInt("updateInterval")*20);
+    		
+    	}
+    	
+    }
+    
     public void loadMap() {
         Set<String> keys = getMapConfig().getKeys(false);
         int loadedMaps = 0;
@@ -53,6 +96,7 @@ public class PictureFrame extends JavaPlugin {
             SavedMap map = new SavedMap(this, Short.valueOf(section.getString("id")));
             if (map.loadMap()) {
                 loadedMaps++;
+                this.loadedMaps.add(map);
             } else {
                 failedMaps++;
             }
@@ -89,6 +133,31 @@ public class PictureFrame extends JavaPlugin {
         }
     }
 
+    public void reloadUpdateConfig() {
+    	if(this.updateConfigFile == null) {
+    		this.updateConfigFile = new File(getDataFolder(), "updatedFrame.yml");
+    	}
+    	this.updateConfig = YamlConfiguration.loadConfiguration(this.updateConfigFile);
+    }
+    
+    public FileConfiguration getUpdateConfig(){
+    	if(this.updateConfig == null) {
+    		reloadUpdateConfig();
+    	}
+    	return updateConfig;
+    }
+    
+    public void saveUpdateConfig() {
+    	if((this.updateConfig == null) || (this.updateConfigFile == null)){
+    		return;
+    	}
+    	try {
+			getUpdateConfig().save(this.updateConfigFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+    
     public File getScaledImagesDirectory() {
         return scaledImagesDirectory;
     }
@@ -96,4 +165,26 @@ public class PictureFrame extends JavaPlugin {
     public File getImagesDirectory() {
         return imagesDirectory;
     }
+    
+    public ArrayList<SavedMap> getLoadedMaps(){
+    	return loadedMaps;
+    }
+    
+    public SavedMap getMap(short id){
+    	for(SavedMap map : loadedMaps){
+    		if(map.getId() == id){
+    			return map;
+    		}
+    	}
+    	return null;
+    }
+    
+    public boolean isMapLoaded(short id){
+    	for(SavedMap map : loadedMaps){
+    		if(map.getId() == id)
+    			return true;
+    	}
+    	return false;
+    }
+    
 }

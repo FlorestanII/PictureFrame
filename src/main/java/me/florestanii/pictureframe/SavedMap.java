@@ -48,7 +48,6 @@ public class SavedMap {
     }
 
     public boolean saveMap() {
-        this.plugin.getLogger().info("Saving map " + id);
         try {
             File outputfile = new File(plugin.getScaledImagesDirectory(), imgName + ".png");
             ImageIO.write(MapPalette.resizeImage(image), "png", outputfile);

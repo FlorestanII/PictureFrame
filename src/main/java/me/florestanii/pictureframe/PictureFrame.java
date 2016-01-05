@@ -1,6 +1,7 @@
 package me.florestanii.pictureframe;
 
 import me.florestanii.pictureframe.listener.ChunkListener;
+import me.florestanii.pictureframe.listener.ProtectionListener;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -46,7 +47,8 @@ public class PictureFrame extends JavaPlugin {
 
         getCommand("pictureframe").setExecutor(new PictureFrameCommand(this));
         getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
-
+        getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
+        
         saveDefaultConfig();
         loadMap();
         loadUpdates();

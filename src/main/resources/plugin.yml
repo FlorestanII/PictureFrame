@@ -5,6 +5,23 @@ version: VERSION
 
 commands:
   pictureframe:
-     descripton: PictureFrame command
-     usage: / <commands> <args>
-     aliases: [pf]
+    descripton: PictureFrame command
+    usage: / <commands> <args>
+    aliases: [pf]
+
+permissions:
+  pictureframe.create:
+    description: Players with this permission may create 1x1 posters
+    default: op
+  pictureframe.multicreate:
+    description: Players with this permission may create large posters
+    default: op
+  pictureframe.reload:
+    description: Players with this permission may reload the plugin
+    default: op
+  pictureframe.interact:
+    description: Players with this permission may interact with maps of posters (i.e. rotate them)
+    default: op
+  pictureframe.destroy:
+    description: Players with this permission may destroy posters
+    default: op

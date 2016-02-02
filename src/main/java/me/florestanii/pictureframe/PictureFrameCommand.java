@@ -52,6 +52,10 @@ public class PictureFrameCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("reload") && sender.hasPermission("pictureframe.reload")) {
+            plugin.reload();
+        }
+
         sendHelp(p);
         return true;
     }

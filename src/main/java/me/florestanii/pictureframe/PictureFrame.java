@@ -23,20 +23,18 @@ public class PictureFrame extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        posters.clear();
-
         if (!imagesDirectory.exists() && !imagesDirectory.mkdirs()) {
             getLogger().severe("No images directory found (and it couldn't be created automatically).");
             setEnabled(false);
             return;
         }
 
+        saveDefaultConfig();
+        loadPosters();
+
         getCommand("pictureframe").setExecutor(new PictureFrameCommand(this));
         getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
-
-        saveDefaultConfig();
-        loadPosters();
     }
 
     @Override
@@ -44,7 +42,12 @@ public class PictureFrame extends JavaPlugin {
         savePosters();
     }
 
-    public void loadPosters() {
+    public void reload() {
+        loadPosters();
+    }
+
+    private void loadPosters() {
+        posters.clear();
         ConfigurationSection posterConfig = YamlConfiguration.loadConfiguration(mapConfigFile);
         int loadedMaps = 0;
         int failedMaps = 0;

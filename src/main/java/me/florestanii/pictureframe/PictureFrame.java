@@ -2,43 +2,29 @@ package me.florestanii.pictureframe;
 
 import me.florestanii.pictureframe.listener.ChunkListener;
 import me.florestanii.pictureframe.listener.ProtectionListener;
-
+import me.florestanii.pictureframe.util.Util;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Set;
-
-import javax.imageio.ImageIO;
+import java.util.List;
+import java.util.logging.Level;
 
 public class PictureFrame extends JavaPlugin {
-    private FileConfiguration mapConfig;
-    private File mapConfigFile;
-    private File scaledImagesDirectory;
-    private File imagesDirectory;
+    private final File mapConfigFile = new File(getDataFolder(), "posters.yml");
+    private final File imagesDirectory = new File(getDataFolder(), "images");
+    private final List<Poster> posters = new ArrayList<>();
 
-    private File updateConfigFile;
-    private FileConfiguration updateConfig;
-    
-    private ArrayList<SavedMap> loadedMaps = new ArrayList<SavedMap>();
-    
     @Override
     public void onEnable() {
-        scaledImagesDirectory = new File(getDataFolder(), "scaledimages");
-        if (!scaledImagesDirectory.exists() && !scaledImagesDirectory.mkdirs()) {
-            getLogger().severe("No scaled images directory found (and it couldn't be created automatically).");
-            setEnabled(false);
-            return;
-        }
+        posters.clear();
 
-        imagesDirectory = new File(getDataFolder(), "images");
         if (!imagesDirectory.exists() && !imagesDirectory.mkdirs()) {
             getLogger().severe("No images directory found (and it couldn't be created automatically).");
             setEnabled(false);
@@ -48,145 +34,90 @@ public class PictureFrame extends JavaPlugin {
         getCommand("pictureframe").setExecutor(new PictureFrameCommand(this));
         getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
-        
+
         saveDefaultConfig();
-        loadMap();
-        loadUpdates();
+        loadPosters();
     }
 
     @Override
     public void onDisable() {
+        saveMapConfig();
         super.onDisable();
     }
 
-    public void loadUpdates(){
-    	Set<String> keys = getUpdateConfig().getKeys(false);
-    	
-    	for(String key : keys) {
-    		final ConfigurationSection section = getUpdateConfig().getConfigurationSection(key);
-    		
-    		getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-				
-				@Override
-				public void run() {
-
-					try {
-						BufferedImage updatedImage = ImageIO.read(URI.create(section.getString("updateURL")).toURL().openStream());
-						getMap((short)section.getInt("map")).updateImage(updatedImage);
-						getMap((short)section.getInt("map")).loadMap();
-						getMap((short)section.getInt("map")).saveMap();
-					} catch (MalformedURLException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-						
-				}
-				
-			}, section.getInt("updateInterval")*20, section.getInt("updateInterval")*20);
-    		
-    	}
-    	
-    }
-    
-    public void loadMap() {
-        Set<String> keys = getMapConfig().getKeys(false);
+    public void loadPosters() {
+        ConfigurationSection posterConfig = YamlConfiguration.loadConfiguration(mapConfigFile);
         int loadedMaps = 0;
         int failedMaps = 0;
-        for (String key : keys) {
-            ConfigurationSection section = getMapConfig().getConfigurationSection(key);
-            SavedMap map = new SavedMap(this, Short.valueOf(section.getString("id")));
-            if (map.loadMap()) {
-                loadedMaps++;
-                this.loadedMaps.add(map);
-            } else {
+        for (ConfigurationSection section : Util.getConfigList(posterConfig, "posters")) {
+            Poster poster = new Poster(section.getShortList("maps"), section.getInt("width"), section.getInt("height"));
+            try {
+                poster.setImage(new URL(section.getString("source")));
+                posters.add(poster);
+                registerUpdates(poster);
+            } catch (IOException e) {
                 failedMaps++;
             }
-
         }
-        getLogger().info(loadedMaps + " maps was loaded");
+        getLogger().info(loadedMaps + " posters loaded");
         if (failedMaps != 0) {
-            getLogger().info(failedMaps + " maps can't be loaded");
+            getLogger().info(failedMaps + " posters can't be loaded");
         }
-    }
-
-    public void reloadMapConfig() {
-        if (this.mapConfigFile == null) {
-            this.mapConfigFile = new File(getDataFolder(), "map.yml");
-        }
-        this.mapConfig = YamlConfiguration.loadConfiguration(this.mapConfigFile);
-    }
-
-    public FileConfiguration getMapConfig() {
-        if (this.mapConfig == null) {
-            reloadMapConfig();
-        }
-        return this.mapConfig;
     }
 
     public void saveMapConfig() {
-        if ((this.mapConfig == null) || (this.mapConfigFile == null)) {
-            return;
-        }
-        try {
-            getMapConfig().save(this.mapConfigFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+        List<Object> posterConfigs = new ArrayList<>();
 
-    public void reloadUpdateConfig() {
-    	if(this.updateConfigFile == null) {
-    		this.updateConfigFile = new File(getDataFolder(), "updatedFrame.yml");
-    	}
-    	this.updateConfig = YamlConfiguration.loadConfiguration(this.updateConfigFile);
-    }
-    
-    public FileConfiguration getUpdateConfig(){
-    	if(this.updateConfig == null) {
-    		reloadUpdateConfig();
-    	}
-    	return updateConfig;
-    }
-    
-    public void saveUpdateConfig() {
-    	if((this.updateConfig == null) || (this.updateConfigFile == null)){
-    		return;
-    	}
-    	try {
-			getUpdateConfig().save(this.updateConfigFile);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-    }
-    
-    public File getScaledImagesDirectory() {
-        return scaledImagesDirectory;
+        for (Poster poster : posters) {
+            MemoryConfiguration posterConfig = new MemoryConfiguration();
+            posterConfig.set("width", poster.getWidth());
+            posterConfig.set("height", poster.getHeight());
+            posterConfig.set("source", poster.getSource().toString());
+            posterConfig.set("maps", poster.getMapIds());
+            posterConfigs.add(posterConfig.get(""));
+        }
+
+        FileConfiguration config = new YamlConfiguration();
+        config.getRoot().set("posters", posterConfigs);
+
+        try {
+            config.save(mapConfigFile);
+        } catch (IOException e) {
+            getLogger().log(Level.SEVERE, "Could not save the posters", e);
+        }
     }
 
     public File getImagesDirectory() {
         return imagesDirectory;
     }
-    
-    public ArrayList<SavedMap> getLoadedMaps(){
-    	return loadedMaps;
+
+    public boolean isMapLoaded(short id) {
+        for (Poster poster : posters) {
+            if (poster.containsMap(id)) {
+                return true;
+            }
+        }
+        return false;
     }
-    
-    public SavedMap getMap(short id){
-    	for(SavedMap map : loadedMaps){
-    		if(map.getId() == id){
-    			return map;
-    		}
-    	}
-    	return null;
+
+    public void addPoster(Poster poster) {
+        posters.add(poster);
+        registerUpdates(poster);
+        saveMapConfig();
     }
-    
-    public boolean isMapLoaded(short id){
-    	for(SavedMap map : loadedMaps){
-    		if(map.getId() == id)
-    			return true;
-    	}
-    	return false;
+
+    private void registerUpdates(final Poster poster) {
+        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    poster.reload();
+                } catch (IOException e) {
+                    getLogger().warning("Could not reload poster from " + poster.getSource());
+                }
+            }
+
+        }, getConfig().getInt("updateInterval", 60 * 60) * 20, getConfig().getInt("updateInterval", 60 * 60) * 20);
     }
-    
 }

@@ -1,13 +1,9 @@
 package me.florestanii.pictureframe;
 
-import me.florestanii.pictureframe.util.Util;
-import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.map.MapView;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -49,46 +45,26 @@ public class MapHandler implements Runnable {
                     return;
                 }
 
-                final BufferedImage[] images = poster.getImages();
-
                 plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
                     @Override
                     @SuppressWarnings("deprecation")
                     public void run() {
-                        ItemStack map;
-                        for (BufferedImage image : images) {
-                            MapView mapView;
-
-                            mapView = plugin.getServer().createMap(player.getWorld());
-
-                            Util.removeAllRenderers(mapView);
-                            mapView.addRenderer(new ImageMapRenderer(image));
-                            map = new ItemStack(Material.MAP, 1, mapView.getId());
-
-                            renderedMaps.add(map);
-
-                            SavedMap svg = new SavedMap(plugin, mapView.getId(), image, player.getWorld());
-                            svg.saveMap();
-                            player.sendMap(mapView);
-                        }
-
-                        if (callback != null) {
-                            callback.posterReady(poster, renderedMaps);
-                        }
+                        poster.sendTo(player);
+                        callback.posterReady(poster);
                     }
                 });
             }
         });
     }
 
-    public Poster createPoster() throws IOException {
-        BufferedImage imgSrc;
-        try {
-            imgSrc = ImageIO.read(URI.create(this.path).toURL().openStream());
-        } catch (Exception e) {
-            imgSrc = ImageIO.read(new File(plugin.getImagesDirectory(), path));
+    private Poster createPoster() throws IOException {
+        URI source;
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            source = URI.create(path);
+        } else {
+            source = new File(plugin.getImagesDirectory(), path).toURI();
         }
-        return new Poster(imgSrc, width, height);
+        return Poster.create(source.toURL(), width, height);
     }
 
     public void setCallback(Callback callback) {
@@ -96,7 +72,7 @@ public class MapHandler implements Runnable {
     }
 
     public interface Callback {
-        void posterReady(Poster poster, List<ItemStack> maps);
+        void posterReady(Poster poster);
 
         void posterFailed(Throwable exception);
     }

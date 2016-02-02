@@ -1,7 +1,6 @@
 package me.florestanii.pictureframe.listener;
 
 import me.florestanii.pictureframe.PictureFrame;
-
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
@@ -12,7 +11,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 
 public class ProtectionListener implements Listener{
-
 	private final PictureFrame plugin;
 	
 	public ProtectionListener(PictureFrame plugin){
@@ -35,7 +33,6 @@ public class ProtectionListener implements Listener{
 			event.setCancelled(true);
 			return;
 		}
-		
 	}
 	
 	@EventHandler
@@ -61,7 +58,5 @@ public class ProtectionListener implements Listener{
 			event.setCancelled(true);
 			return;
 		}
-		
 	}
-	
 }

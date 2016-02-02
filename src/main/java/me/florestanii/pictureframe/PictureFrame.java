@@ -41,7 +41,7 @@ public class PictureFrame extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        saveMapConfig();
+        savePosters();
         super.onDisable();
     }
 
@@ -65,7 +65,7 @@ public class PictureFrame extends JavaPlugin {
         }
     }
 
-    public void saveMapConfig() {
+    public void savePosters() {
         List<Object> posterConfigs = new ArrayList<>();
 
         for (Poster poster : posters) {
@@ -103,7 +103,7 @@ public class PictureFrame extends JavaPlugin {
     public void addPoster(Poster poster) {
         posters.add(poster);
         registerUpdates(poster);
-        saveMapConfig();
+        savePosters();
     }
 
     private void registerUpdates(final Poster poster) {

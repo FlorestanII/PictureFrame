@@ -1,17 +1,12 @@
 package me.florestanii.pictureframe;
 
-import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MapHandler implements Runnable {
-    private final List<ItemStack> renderedMaps;
     private final Player player;
     private final PictureFrame plugin;
     private final String path;
@@ -20,7 +15,6 @@ public class MapHandler implements Runnable {
     private Callback callback;
 
     public MapHandler(Player player, String path, int width, int height, PictureFrame plugin) {
-        this.renderedMaps = new ArrayList<>(width * height);
         this.player = player;
         this.plugin = plugin;
         this.path = path;

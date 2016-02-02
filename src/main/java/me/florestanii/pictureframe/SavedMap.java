@@ -11,7 +11,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
 import java.util.logging.Level;
 
 public class SavedMap {
@@ -32,18 +31,12 @@ public class SavedMap {
     public SavedMap(PictureFrame plugin, short id) {
         this.id = id;
         this.plugin = plugin;
-        Set<String> keys = this.plugin.getMapConfig().getKeys(false);
-        for (String key : keys) {
-            if (key.equals("map" + id)) {
-                ConfigurationSection section = plugin.getMapConfig().getConfigurationSection(key);
-
-                this.imgName = section.getString("image");
-                try {
-                    this.image = ImageIO.read(new File(plugin.getScaledImagesDirectory(), this.imgName + ".png"));
-                } catch (IOException e) {
-                    plugin.getLogger().log(Level.WARNING, "Could not load map image " + imgName + ".png", e);
-                }
-            }
+        ConfigurationSection section = this.plugin.getMapConfig().getConfigurationSection("map" + id);
+        this.imgName = section.getString("image");
+        try {
+            this.image = ImageIO.read(new File(plugin.getScaledImagesDirectory(), this.imgName + ".png"));
+        } catch (IOException e) {
+            plugin.getLogger().log(Level.WARNING, "Could not load map image " + imgName + ".png", e);
         }
     }
 
@@ -72,12 +65,12 @@ public class SavedMap {
         }
         return false;
     }
-    public short getId(){
-    	return id;
+
+    public short getId() {
+        return id;
     }
-    
-    public void updateImage(BufferedImage image){
-    	this.image = image;
+
+    public void updateImage(BufferedImage image) {
+        this.image = image;
     }
-    
 }

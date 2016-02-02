@@ -42,7 +42,6 @@ public class PictureFrame extends JavaPlugin {
     @Override
     public void onDisable() {
         savePosters();
-        super.onDisable();
     }
 
     public void loadPosters() {

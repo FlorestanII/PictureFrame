@@ -6,7 +6,7 @@ version: VERSION
 commands:
   pictureframe:
     descripton: PictureFrame command
-    usage: / <commands> <args>
+    usage: /pictureframe <command> <args>
     aliases: [pf]
 
 permissions:

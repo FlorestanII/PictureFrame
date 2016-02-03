@@ -4,9 +4,16 @@ import org.bukkit.Material;
 import org.bukkit.Rotation;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapView;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class Util {
     public static void attachItemFrame(Block block, ItemStack map, BlockFace face) {
@@ -37,5 +44,20 @@ public class Util {
         for (int i = 0; i < map.getRenderers().size(); i++) {
             map.removeRenderer(map.getRenderers().get(i));
         }
+    }
+
+    public static List<ConfigurationSection> getConfigList(ConfigurationSection config, String path) {
+        if (!config.isList(path)) {
+            return Collections.emptyList();
+        }
+
+        List<ConfigurationSection> list = new LinkedList<>();
+        for (Map object : config.getMapList(path)) {
+            MemoryConfiguration mc = new MemoryConfiguration();
+            mc.addDefaults(object);
+            list.add(mc);
+        }
+
+        return list;
     }
 }

@@ -48,23 +48,29 @@ public class PictureFrame extends JavaPlugin {
 
     private void loadPosters() {
         posters.clear();
-        ConfigurationSection posterConfig = YamlConfiguration.loadConfiguration(mapConfigFile);
-        int loadedMaps = 0;
-        int failedMaps = 0;
-        for (ConfigurationSection section : Util.getConfigList(posterConfig, "posters")) {
-            Poster poster = new Poster(section.getShortList("maps"), section.getInt("width"), section.getInt("height"));
-            try {
-                poster.setImage(new URL(section.getString("source")));
-                posters.add(poster);
-                registerUpdates(poster);
-            } catch (IOException e) {
-                failedMaps++;
+        getServer().getScheduler().runTaskAsynchronously(this, new Runnable() {
+            @Override
+            public void run() {
+                ConfigurationSection posterConfig = YamlConfiguration.loadConfiguration(mapConfigFile);
+                int loadedMaps = 0;
+                int failedMaps = 0;
+                for (ConfigurationSection section : Util.getConfigList(posterConfig, "posters")) {
+                    Poster poster = new Poster(section.getShortList("maps"), section.getInt("width"), section.getInt("height"));
+                    try {
+                        poster.setImage(new URL(section.getString("source")));
+                        posters.add(poster);
+                        registerUpdates(poster);
+                        loadedMaps++;
+                    } catch (IOException e) {
+                        failedMaps++;
+                    }
+                }
+                getLogger().info(loadedMaps + " posters loaded");
+                if (failedMaps != 0) {
+                    getLogger().info(failedMaps + " posters couldn't be loaded");
+                }
             }
-        }
-        getLogger().info(loadedMaps + " posters loaded");
-        if (failedMaps != 0) {
-            getLogger().info(failedMaps + " posters can't be loaded");
-        }
+        });
     }
 
     public void savePosters() {
@@ -109,7 +115,7 @@ public class PictureFrame extends JavaPlugin {
     }
 
     private void registerUpdates(final Poster poster) {
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+        getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
 
             @Override
             public void run() {

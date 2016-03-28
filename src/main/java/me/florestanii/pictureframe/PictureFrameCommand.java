@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.logging.Level;
 
 public class PictureFrameCommand implements CommandExecutor {
-
     private final PictureFrame plugin;
 
     public PictureFrameCommand(PictureFrame plugin) {
@@ -43,17 +42,13 @@ public class PictureFrameCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("create")) {
-            handleFrameCreate(p, args);
-            return true;
-        }
-
-        if (args[0].equalsIgnoreCase("multicreate")) {
-            handleMultiFrameCreate(p, args);
+            handleFrameCreation(p, args);
             return true;
         }
 
         if (args[0].equalsIgnoreCase("reload") && sender.hasPermission("pictureframe.reload")) {
             plugin.reload();
+            return true;
         }
 
         sendHelp(p);
@@ -61,38 +56,33 @@ public class PictureFrameCommand implements CommandExecutor {
     }
 
     public void sendHelp(Player p) {
-        // TODO send help to player
+        p.sendMessage("Shuffle a poster: " + ChatColor.GRAY + "/pf shuffle");
+        if (p.hasPermission("pictureframe.create")) {
+            p.sendMessage("Create a poster: " + ChatColor.GRAY + "/pf create [width] [height] <url>");
+        }
+        if (p.hasPermission("pictureframe.reload")) {
+            p.sendMessage("Reload all posters: " + ChatColor.GRAY + "/pf reload");
+        }
     }
 
-    private void handleFrameCreate(final Player p, String[] args) {
+    private void handleFrameCreation(final Player p, String[] args) {
         if (!p.hasPermission("pictureframe.create")) {
             p.sendMessage(ChatColor.DARK_RED + "You don't have enough permissions to use that command!");
             return;
         }
 
-        StringBuilder pathBuilder = new StringBuilder();
-        for (int i = 1; i < args.length; i++) {
-            if (i != 1) {
-                pathBuilder.append(" ");
-            }
-            pathBuilder.append(args[i]);
+        int width = 1;
+        int height = 1;
+        int urlStartIndex = 1;
+        if (args.length >= 3 && args[1].matches("\\d+") && args[2].matches("\\d+")) {
+            width = Integer.parseInt(args[1]);
+            height = Integer.parseInt(args[2]);
+            urlStartIndex = 3;
         }
 
-        startPlacePoster(p, pathBuilder.toString(), 1, 1);
-    }
-
-    private void handleMultiFrameCreate(final Player p, String[] args) {
-        if (!p.hasPermission("pictureframe.mutlicreate")) {
-            p.sendMessage(ChatColor.DARK_RED + "You don't have enough permissions to use that command!");
-            return;
-        }
-
-        int width = Integer.parseInt(args[1]);
-        int height = Integer.parseInt(args[2]);
-
         StringBuilder pathBuilder = new StringBuilder();
-        for (int i = 3; i < args.length; i++) {
-            if (i != 3) {
+        for (int i = urlStartIndex; i < args.length; i++) {
+            if (i != urlStartIndex) {
                 pathBuilder.append(" ");
             }
             pathBuilder.append(args[i]);

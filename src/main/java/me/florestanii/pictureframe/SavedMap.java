@@ -34,8 +34,13 @@ public class SavedMap {
         return id;
     }
 
-    public boolean setImage(BufferedImage image) {
+    public void setImage(BufferedImage image) {
         this.image = image;
-        return updateMapRenderer();
+        Bukkit.getScheduler().scheduleSyncDelayedTask(PictureFrame.getPlugin(PictureFrame.class), new Runnable() {
+            @Override
+            public void run() {
+                updateMapRenderer();
+            }
+        });
     }
 }

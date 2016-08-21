@@ -56,7 +56,6 @@ public class PictureFrameCommand implements CommandExecutor {
     }
 
     public void sendHelp(Player p) {
-        p.sendMessage("Shuffle a poster: " + ChatColor.GRAY + "/pf shuffle");
         if (p.hasPermission("pictureframe.create")) {
             p.sendMessage("Create a poster: " + ChatColor.GRAY + "/pf create [width] [height] <url>");
         }
